@@ -3,19 +3,41 @@ global CANDIDATES: Field = 2;
 use dep::std;
 use dep::ecrecover;
 
+
 fn main(
   pub_key: [u8; 64],
   signature: [u8; 64],
   hashed_message: pub [u8; 32],
   polynomial: [Field; CANDIDATES + 1],
-  polynomial_commitment: pub Field,
+  polynomial_commitment: Field,
   nullifier: pub [u8; 32],
 ) {
-  // Write your main logic here
+
+  let key = ecrecover::secp256k1::PubKey::from_unified(pub_key);
+  let address = key.ecrecover(signature,hashed_message);
+
+
+  assert(evaluate_polynomial(polynomial,address)==0);
+
+  let _polynomial_commitment = std::hash::pedersen(polynomial)[0];
+  assert(_polynomial_commitment == polynomial_commitment);
+  
+  let _blake_hash = std::hash::blake2s(signature);
+  assert(_blake_hash == nullifier);
+
+
 }
 
 fn evaluate_polynomial(polynomial: [Field; CANDIDATES + 1], x: Field) -> Field {
   // Write logic to evaluate polynomial here
+
+  let mut mulitiplication = 1;
+  let mut addition = 0;
+  for i in 0..polynomial.len(){
+    addition = addition + mulitiplication * polynomial[i];
+    mulitiplication = mulitiplication*x;
+  }
+  addition
 }
 
 #[test]
@@ -36,4 +58,3 @@ fn test_main() {
 
   main(pub_key, signature, hashed_message, polynomial, polynomial_commitment, nullifier);
 }
-
